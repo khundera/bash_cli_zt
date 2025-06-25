@@ -35,10 +35,12 @@ fi
 function existingPeerInfo() {
 
 	# Get existing peer information
+	if [ -e "networks/${theNet}/${themem}" ]
+	then
 	exPeerName="$(grep PEERNAME networks/${theNet}/${themem} | cut -d: -f2 )"
 	exPeerDesc="$(grep PEERDESC networks/${theNet}/${themem} | cut -d: -f2 )"
 	themem_info="ID: ${themem} Name: ${exPeerName} Description: ${exPeerDesc} Ip: ${ifIP} "
-
+	fi
 }
 
 function delTemp() {
@@ -90,9 +92,10 @@ function getAllPeers() {
 
 		# Check if the peer is authorized
 		ifAuth=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/${theNet}/member/${themem}" | jq '.authorized')
-		ifIPpub=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}" | jq '.paths[0].address')
+		ifIPpub=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}" | jq -r '.paths[0].address')
+		#debug man echo $ifIPpub
 		ifIP=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/${theNet}/member/${themem}" | jq -r '.ipAssignments[]')
-		
+
 #...is so then display it.
 		if [[ "${ifAuth}" == "true" ]]; then
 
@@ -160,7 +163,7 @@ function peerManage() {
 			clear
     	
 			# Add header to file
-			echo "Peer IP IPpub Name Descripcion" > ${tmpPeerFile}
+			echo "Peer IP IPpub Name Autorizado Descripcion" > ${tmpPeerFile}
 # debug man echo curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)" "${ztAddress}/${theNet}/member"
 			for themem in $(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)" "${ztAddress}/${theNet}/member"| egrep -o '[a-f0-9]{10}')
 			do
@@ -168,10 +171,10 @@ function peerManage() {
 				# Check if the member is authorized.
 				ifIP=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/${theNet}/member/${themem}" | jq -r '.ipAssignments[]')
 				ifAuth=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/${theNet}/member/${themem}" | jq '.authorized')
-				ifIPpub=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}" | jq '.paths[0].address')
+				ifIPpub=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}" | jq -r '.paths[0].address')
 
-# debug man echo "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/peer/${themem}"		
-				
+# debug man echo "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}"		
+	
 				# If the user is authorized, don't show them
 				if [[ ("${ifAuth}" =~ "false" && "${ifIP}" =~ "127.0.0.100") ]]; then
 	
@@ -183,7 +186,7 @@ function peerManage() {
 					existingPeerInfo
 					
 					# Write results to the temp file.
-					echo "${themem} ${ifIP} ${ifIPpub} ${exPeerName} ${exPeerDesc}" >> ${tmpPeerFile}
+					echo "${themem} ${ifIP} ${ifIPpub} ${exPeerName} ${ifAuth} ${exPeerDesc}" >> ${tmpPeerFile}
 
 				fi
 	
@@ -267,7 +270,7 @@ function peerManage() {
 				delTemp
 
 				# Add header to file
-				echo "Peer IP IPpub Name Descripcion" > ${tmpPeerFile}
+				echo "Peer IP IPpub Name Autorizado Descripcion" > ${tmpPeerFile}
 
 				# Get all the members
 	    			for themem in $(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)" "${ztAddress}/${theNet}/member"| egrep -o '[a-f0-9]{10}'); do
@@ -275,7 +278,7 @@ function peerManage() {
 					# Check if the peer is authorized
 					ifAuth=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/${theNet}/member/${themem}" | jq '.authorized')
 					ifIP=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/${theNet}/member/${themem}" | jq -r '.ipAssignments[]')
-					ifIPpub=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}" | jq '.paths[0].address')
+					ifIPpub=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}" | jq -r '.paths[0].address')
 
 					# ...is so then display it.
 					if [[ "${ifAuth}" == "true" ]]; then
@@ -284,7 +287,7 @@ function peerManage() {
 						existingPeerInfo
 				
 
-						echo "${themem} ${ifIP} ${ifIPpub} ${exPeerName}  ${exPeerDesc}" >> ${tmpPeerFile}
+						echo "${themem} ${ifIP} ${ifIPpub} ${exPeerName} ${ifAuth} ${exPeerDesc}" >> ${tmpPeerFile}
 
 					fi
 
@@ -317,7 +320,7 @@ function peerManage() {
 			delTemp
 
 			# Add header to file
-			echo "Peer IP IPpub Name Descripcion" > ${tmpPeerFile}
+			echo "Peer IP IPpub Nameb Autorizado Descripcion" > ${tmpPeerFile}
 
 			# Get all the members
 		    	for themem in $(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)" "${ztAddress}/${theNet}/member"| egrep -o '[a-f0-9]{10}'); do
@@ -325,7 +328,7 @@ function peerManage() {
 				# Check if the peer is authorized
 				ifAuth=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/${theNet}/member/${themem}" | jq '.authorized')
 				ifIP=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddress}/${theNet}/member/${themem}" | jq -r '.ipAssignments[]')
-				ifIPpub=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}" | jq '.paths[0].address')
+				ifIPpub=$(curl -s -H "X-ZT1-Auth: $(cat /var/lib/zerotier-one/authtoken.secret)"  "${ztAddr}/peer/${themem}" | jq -r '.paths[0].address')
 
 				# ...is so then display it.
 				if [[ "${ifAuth}" == "true" ]]; then
@@ -333,7 +336,7 @@ function peerManage() {
 					# Get existing Peer Info
 					existingPeerInfo
 
-					echo "${themem} ${ifIP} ${ifIPpub} ${exPeerName} ${exPeerDesc}" >> ${tmpPeerFile}
+					echo "${themem} ${ifIP} ${ifIPpub} ${exPeerName} ${ifAuth} ${exPeerDesc}" >> ${tmpPeerFile}
 
 				fi
 	
